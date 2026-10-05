@@ -1,0 +1,98 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: upscaler-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: upscaler-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-image_upscaler}
+      - DB_USERNAME=${POSTGRES_USER:-upscaler}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-upscaler_secret_pass}
+      - GPU_WORKER_URL=${GPU_WORKER_URL:-http://gpu-worker:8000}
+      - GPU_CONCURRENCY=${GPU_CONCURRENCY:-1}
+      - STORAGE_ROOT=${STORAGE_ROOT:-/data}
+      - UPSCALE_DEFAULT_MODEL=${UPSCALE_DEFAULT_MODEL:-general}
+      - ADOBE_STOCK_MIN_MP=${ADOBE_STOCK_MIN_MP:-4.0}
+      - ADOBE_STOCK_MAX_MP=${ADOBE_STOCK_MAX_MP:-100.0}
+      - ADOBE_STOCK_MAX_FILE_MB=${ADOBE_STOCK_MAX_FILE_MB:-45}
+    volumes:
+      - image-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gpu-worker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  gpu-worker:
+    build:
+      context: ./gpu-worker
+      dockerfile: Dockerfile
+    container_name: upscaler-gpu-worker
+    restart: unless-stopped
+    environment:
+      - MODEL_CACHE_DIR=/cache
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - image-data:/data
+      - model-cache:/cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: upscaler-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-image_upscaler}
+      - POSTGRES_USER=${POSTGRES_USER:-upscaler}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-upscaler_secret_pass}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-upscaler} -d ${POSTGRES_DB:-image_upscaler}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  image-data:
+  model-cache:

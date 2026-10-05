@@ -1,0 +1,64 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: gpu-image-upscaler-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:image_upscaler}}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 50
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: ${UPSCALE_MAX_FILE_SIZE:100MB}
+      max-request-size: ${UPSCALE_MAX_REQUEST_SIZE:2000MB}
+      file-size-threshold: 2MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  storage:
+    root: ${STORAGE_ROOT:./data}
+    uploads-dir: ${app.storage.root}/uploads
+    results-dir: ${app.storage.root}/results
+  gpu:
+    worker-url: ${GPU_WORKER_URL:http://localhost:8000}
+    concurrency: ${GPU_CONCURRENCY:1}
+    timeout-seconds: ${GPU_TIMEOUT_SECONDS:300}
+  upscale:
+    default-model: ${UPSCALE_DEFAULT_MODEL:general}
+    default-scale: ${UPSCALE_DEFAULT_SCALE:4}
+    max-file-size-mb: ${UPSCALE_MAX_FILE_SIZE_MB:100}
+    max-batch-images: ${UPSCALE_MAX_BATCH_IMAGES:1000}
+    max-image-dimension: ${UPSCALE_MAX_IMAGE_DIMENSION:12000}
+    max-pixel-count: ${UPSCALE_MAX_PIXEL_COUNT:64000000}
+    tile-size: ${UPSCALE_TILE_SIZE:512}
+    tile-padding: ${UPSCALE_TILE_PADDING:32}
