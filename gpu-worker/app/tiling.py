@@ -89,8 +89,10 @@ def _run_tiles(
     if h <= tile_size and w <= tile_size:
         with torch.no_grad():
             inp = img_tensor.to(device)
-            out = model(inp)
-            return out.cpu()
+            out = model(inp).cpu()
+            if out.shape[2] != out_h or out.shape[3] != out_w:
+                out = F.interpolate(out, size=(out_h, out_w), mode='bicubic', align_corners=False)
+            return out
 
     # Tiled processing with seamless overlap accumulation
     output = torch.zeros((b, c, out_h, out_w), dtype=torch.float32)
@@ -125,6 +127,10 @@ def _run_tiles(
                 # Generate 2D blend weights for seamless transition
                 th, tw = y1 - y0, x1 - x0
                 out_th, out_tw = th * scale, tw * scale
+
+                # If model's native output size differs from target scale (e.g. 4x anime model running at 2x)
+                if tile_out.shape[2] != out_th or tile_out.shape[3] != out_tw:
+                    tile_out = F.interpolate(tile_out, size=(out_th, out_tw), mode='bicubic', align_corners=False)
 
                 wx = _create_blend_window_1d(out_tw)
                 wy = _create_blend_window_1d(out_th)

@@ -102,8 +102,8 @@ export const ResultsGallery: React.FC<ResultsGalleryProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredImages.map((img) => {
           const inputUrl = getImageInputUrl(img.id);
-          const resultUrl = img.outputPath ? getImageResultUrl(img.id) : inputUrl;
-          const isDone = img.status === 'COMPLETED' || img.status === 'STOCK_VALIDATION_FAILED';
+          const isDone = img.status === 'COMPLETED' || img.status === 'STOCK_VALIDATION_FAILED' || Boolean(img.outputPath) || Boolean(img.outputWidth);
+          const resultUrl = isDone ? getImageResultUrl(img.id) : inputUrl;
 
           return (
             <div

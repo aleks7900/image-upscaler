@@ -17,6 +17,7 @@ public class ImageResponse {
     private UUID batchId;
     private String originalFilename;
     private ImageStatus status;
+    private String outputPath;
     private Integer inputWidth;
     private Integer inputHeight;
     private BigDecimal inputMegapixels;

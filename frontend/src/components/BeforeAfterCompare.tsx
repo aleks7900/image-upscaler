@@ -13,7 +13,8 @@ export const BeforeAfterCompare: React.FC<BeforeAfterCompareProps> = ({ image, o
   const [viewMode, setViewMode] = useState<'split' | 'side-by-side'>('split');
 
   const inputUrl = getImageInputUrl(image.id);
-  const resultUrl = image.outputPath ? getImageResultUrl(image.id) : inputUrl;
+  const isDone = image.status === 'COMPLETED' || image.status === 'STOCK_VALIDATION_FAILED' || Boolean(image.outputPath) || Boolean(image.outputWidth);
+  const resultUrl = isDone ? getImageResultUrl(image.id) : inputUrl;
 
   const inSizeMb = image.inputSize ? (image.inputSize / (1024 * 1024)).toFixed(2) : '0';
   const outSizeMb = image.outputSize ? (image.outputSize / (1024 * 1024)).toFixed(2) : '0';
@@ -67,14 +68,13 @@ export const BeforeAfterCompare: React.FC<BeforeAfterCompareProps> = ({ image, o
 
           {/* Original (Clipped Top Layer) */}
           <div
-            className="absolute inset-0 overflow-hidden"
-            style={{ width: `${sliderPos}%` }}
+            className="absolute inset-0 overflow-hidden pointer-events-none"
+            style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
           >
             <img
               src={inputUrl}
               alt="Original"
-              className="absolute inset-0 w-full h-full object-contain max-w-none"
-              style={{ width: '100%', height: '100%' }}
+              className="absolute inset-0 w-full h-full object-contain"
             />
           </div>
 

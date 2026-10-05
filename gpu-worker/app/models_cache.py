@@ -11,15 +11,23 @@ logger = logging.getLogger("gpu-worker.cache")
 MODEL_URLS = {
     ("general", 4): {
         "filename": "RealESRGAN_x4plus.pth",
-        "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth"
+        "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+        "native_scale": 4
     },
     ("anime", 4): {
         "filename": "RealESRGAN_x4plus_anime_6B.pth",
-        "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth"
+        "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth",
+        "native_scale": 4
     },
     ("general", 2): {
         "filename": "RealESRGAN_x2plus.pth",
-        "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth"
+        "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
+        "native_scale": 2
+    },
+    ("anime", 2): {
+        "filename": "RealESRGAN_x4plus_anime_6B.pth",
+        "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth",
+        "native_scale": 4
     }
 }
 
@@ -46,7 +54,8 @@ class ModelManager:
             self._download_weights(meta["url"], weight_path)
 
         logger.info(f"Instantiating model {key} on device {device}...")
-        model = create_model(model_name=key[0], scale=key[1], device=device)
+        native_scale = meta.get("native_scale", key[1])
+        model = create_model(model_name=key[0], scale=native_scale, device=device)
 
         if weight_path.exists() and weight_path.stat().st_size > 1_000_000:
             try:

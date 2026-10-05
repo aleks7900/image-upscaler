@@ -256,6 +256,7 @@ public class BatchOrchestrationService {
                 .batchId(img.getBatch().getId())
                 .originalFilename(img.getOriginalFilename())
                 .status(img.getStatus())
+                .outputPath(img.getOutputPath())
                 .inputWidth(img.getInputWidth())
                 .inputHeight(img.getInputHeight())
                 .inputMegapixels(img.getInputMegapixels())

@@ -48,6 +48,12 @@ public class MockUpscaleProvider implements UpscaleProvider {
 
             // Create scaled mock output
             BufferedImage scaled = new BufferedImage(outW, outH, BufferedImage.TYPE_INT_RGB);
+            if (image != null) {
+                java.awt.Graphics2D g2d = scaled.createGraphics();
+                g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.drawImage(image, 0, 0, outW, outH, null);
+                g2d.dispose();
+            }
             ImageIO.write(scaled, "jpg", outputFile);
 
             long size = Files.size(outputFile.toPath());
